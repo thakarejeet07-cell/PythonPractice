@@ -38,6 +38,11 @@ class Magazine(LibraryItem):
     def display_info(self):
         return f"{self.title} - Issue #{self.issue_number} ({self.month})"
 
+
+
+FILENAME = "library.json"
+
+
 def validate_isbn(isbn):  
     if not re.fullmatch(r"\d{13}", isbn):
         raise InvalidISBNError(f"'{isbn}' is not a valid 13-digit ISBN")

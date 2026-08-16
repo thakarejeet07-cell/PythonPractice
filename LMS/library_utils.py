@@ -1,4 +1,4 @@
-import os,json,re
+import os,json,re,csv
 from abc import ABC, abstractmethod
 from itertools import groupby, combinations
 
@@ -65,6 +65,90 @@ def load_books():
         return []
 
 def save_books(books):
-    with open("FILENAME","w") as file:
-        json.dump(books, file, indent=4)      
+    with open(FILENAME,"w") as file:
+        json.dump(books, file, indent=4)    
+
+
+def export_to_csv(csv_filename = "library.csv"):
+    books = load_books()
+    with open(csv_filename,"w",newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["title", "author", "isbn", "genre"])
+        writer.writeheader()
+        writer.writerows(books)
+    print(f"Exported to {csv_filename}")
+
+def add_book(title, author, isbn, genre):
+    validate_isbn(isbn)
+    books = load_books()
+
+    if any(b["isbn"] == isbn for b in books):
+        raise DuplicateBookError(f"Book with ISBN {isbn} already exists")
+    
+    book = Book(title, author, isbn, genre)
+    books.append(book.to_dict())
+
+    save_books(books)
+    print(f"Added: {book.display_info()}")
+
+
+def find_book(isbn):
+    books = load_books()
+    for b in books:
+        if b["isbn"] == isbn:
+            return b
+    raise BookNotFoundError(f"No book found with ISBN {isbn}")
+
+
+def update_book(isbn, **kwargs):
+    books = load_books()
+    for b in books:
+        if b["isbn"] == isbn:
+            for key,value in kwargs.items():
+                if key in b:
+                    b[key] = value
+                else:
+                    print(f"Warning: '{key}' is not a valid field, skipped")
+            save_books(books)
+            print(f"Updated book {isbn}: {kwargs}")
+            return
+    raise BookNotFoundError(f"No book found with ISBN {isbn}")   
+    
+
+
+def delete_book(isbn):
+    books = load_books()
+    updated = [b for b in books if b["isbn"] != isbn]
+    if len(updated) == len(books):
+        raise BookNotFoundError(f"No book found with ISBN {isbn}")    
+    save_books(updated)
+    print(f"Deleted book with ISBN {isbn}")
+
+def unique_authors():
+    books = load_books()
+    return {b["author"] for b in books}  
+
+
+def isbn_to_title_map():
+    books = load_books()
+    return {b["isbn"] : b["title"] for b in books}
+
+def books_by_genre():
+    books = load_books()
+    books.sort(key=lambda b: b["genre"])
+    grouped = {}
+    for genre,group in groupby(books, key=lambda b: b["genre"]):
+        grouped[genre] = [b["title"] for b in group] 
+    return grouped
+
+def suggest_reading_pairs():
+    books = load_books()
+    titles = [b["title"] for b in books]
+    return list(combinations(titles, 2))
+
+
+
+
+            
+
+              
 
